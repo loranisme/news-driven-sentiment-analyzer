@@ -1,0 +1,22 @@
+# 1. 忽略 Python 缓存和临时文件
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# 2. 忽略数据文件夹 (数据太大，且可以重新下载)
+data/
+# 如果你想保留文件夹结构但忽略内容，可以写:
+# data/*
+# !data/.gitkeep
+
+# 3. 忽略训练好的模型 (体积大，且别人可以用代码重新训练)
+models/
+# 同理，如果想保留文件夹:
+# models/*
+# !models/.gitkeep
+
+# 4. 忽略环境配置 (防止 API Key 泄露！！！)
+.env
+venv/
+.idea/
+.vscode/
