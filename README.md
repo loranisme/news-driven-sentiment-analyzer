@@ -9,6 +9,6 @@
 - **回测系统**: 模拟交易策略并评估收益.
 
 ## 如何运行
-1. 安装依赖: `pip install -r requirements.txt` (如果有的话)
+1. 安装依赖
 2. 运行主程序: `python -m src.main`
 
