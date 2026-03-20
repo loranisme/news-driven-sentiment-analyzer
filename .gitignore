@@ -18,5 +18,6 @@ models/
 # 4. 忽略环境配置 (防止 API Key 泄露！！！)
 .env
 venv/
+.venv/
 .idea/
 .vscode/

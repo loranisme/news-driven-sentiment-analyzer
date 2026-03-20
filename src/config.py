@@ -2,57 +2,56 @@ import os
 from pathlib import Path
 
 # ==========================================
-# 1. 📍 项目根目录锚点
+# 1. Project root anchor
 # ==========================================
-# 无论你在哪里运行脚本，这里都能找到项目的绝对路径
+# This keeps path resolution stable regardless of where the script is launched.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ==========================================
-# 2. ⚙️ 全局默认设置 (总开关)
+# 2. Global defaults
 # ==========================================
-# 想换股研究？直接改这里！(例如 "TSLA", "NVDA", "AAPL")
-DEFAULT_TICKER = "META"
+# Change the default research ticker here, for example: TSLA, NVDA, AAPL.
+DEFAULT_TICKER = "NVDA"
 
 # ==========================================
-# 3. 📂 核心文件夹路径
+# 3. Core directory paths
 # ==========================================
 DATA_DIR = BASE_DIR / "data"
 
-# 存放原始数据 (爬虫下来的新闻、yfinance下载的股价)
+# Raw source data such as news articles and downloaded price history.
 RAW_DIR = DATA_DIR / "raw"
 
-# 存放处理后的数据 (计算好情绪分数的表、合并了技术指标的表)
+# Processed datasets such as daily sentiment scores and merged features.
 PROCESSED_DIR = DATA_DIR / "processed"
 
-# 存放训练好的 AI 模型 (.pkl 文件)
+# Saved model artifacts.
 MODEL_DIR = BASE_DIR / "models"
 
-# 存放情感词典 (Loughran McDonald 等)
+# Sentiment lexicon resources.
 LEXICON_DIR = DATA_DIR / "lexicon"
 
 # ==========================================
-# 4. 🛠 自动初始化目录
+# 4. Directory initialization
 # ==========================================
-# 如果文件夹不存在，自动创建它们，防止报错
+# Create required directories on startup if they do not exist.
 for d in [DATA_DIR, RAW_DIR, PROCESSED_DIR, MODEL_DIR, LEXICON_DIR]:
     os.makedirs(d, exist_ok=True)
 
 # ==========================================
-# 5. 🔗 通用文件路径引用
+# 5. Shared path references
 # ==========================================
-# 训练模块会引用这个变量。
-# 设置为目录，让 Trainer 自动生成类似 models/META_model.pkl 的文件名
+# The trainer uses this as the base output location for model files.
 MODEL_PATH = MODEL_DIR
 
-# 情感词典的具体路径 (如果你的分析器需要用到)
+# Full path to the sentiment lexicon file if needed by analyzers.
 LEXICON_PATH = LEXICON_DIR / "LoughranMcDonald_MasterDictionary.csv"
 
 # ==========================================
-# ⚠️ 已弃用 (Deprecated) - 不要取消注释
+# Deprecated examples
 # ==========================================
-# 之前的版本这里写死了 "AAPL_history.csv" 等路径。
-# 在新版架构中，文件名由各个模块根据 `ticker` 变量动态生成。
-# 这样你的系统才能同时支持 META, TSLA, NVDA 等多只股票，而不需要改代码。
+# Older versions hard-coded paths such as "AAPL_history.csv".
+# The current structure builds file names dynamically from the ticker,
+# so the system can support multiple symbols without code changes.
 #
-# STOCK_HISTORY_PATH = RAW_DIR / "AAPL_history.csv"  <-- ❌ 不要用这种写法了
-# FINAL_MERGED_PATH = PROCESSED_DIR / "AAPL_merged.csv" <-- ❌ 也不要用这种
+# STOCK_HISTORY_PATH = RAW_DIR / "AAPL_history.csv"   # Avoid this pattern
+# FINAL_MERGED_PATH = PROCESSED_DIR / "AAPL_merged.csv"  # Avoid this pattern

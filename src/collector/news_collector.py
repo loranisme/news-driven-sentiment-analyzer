@@ -9,9 +9,9 @@ from fake_useragent import UserAgent
 from pathlib import Path
 
 # ==========================================
-# 1. 🟢 路径配置 (确保能找到 src.config)
+# 1. Path setup
 # ==========================================
-# 这一步是为了防止单独运行此文件时找不到模块
+# This keeps imports working when the file is executed directly.
 import sys
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent.parent
@@ -21,15 +21,15 @@ if str(project_root) not in sys.path:
 from src.config import RAW_DIR
 
 # ==========================================
-# 2. 🔌 定义核心函数 (供 main.py 调用)
+# 2. Core function used by main.py
 # ==========================================
 def run_news_collector(ticker="META"):
-    print(f"🚀 启动全网新闻采集器，目标: {ticker} ...")
+    print(f"Starting news collection for {ticker}...")
     
     all_news = []
     
-    # --- A. 第一梯队：yfinance 官方 API ---
-    print("📡 [1/3] 正在请求 Yahoo Finance API...")
+    # --- A. Primary source: yfinance API ---
+    print("[1/3] Requesting Yahoo Finance API...")
     try:
         stock = yf.Ticker(ticker)
         yf_news = stock.news
@@ -42,18 +42,18 @@ def run_news_collector(ticker="META"):
                 'source': 'Yahoo_API',
                 'link': item.get('link')
             })
-        print(f"   ✅ Yahoo API 获取到 {len(yf_news)} 条")
+        print(f"   Yahoo API returned {len(yf_news)} items")
     except Exception as e:
-        print(f"   ❌ Yahoo API 失败: {e}")
+        print(f"   Yahoo API request failed: {e}")
 
-    # --- B. 第二梯队：RSS 轮询 ---
+    # --- B. Secondary source: RSS feeds ---
     rss_sources = [
         {"name": "Google News", "url": f"https://news.google.com/rss/search?q={ticker}+stock&hl=en-US&gl=US&ceid=US:en"},
         {"name": "CNBC Finance", "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664"},
         {"name": "Investing.com", "url": "https://www.investing.com/rss/news_25.rss"}
     ]
     ua = UserAgent()
-    print("📡 [2/3] 正在扫描 RSS 数据源...")
+    print("[2/3] Scanning RSS feeds...")
     
     for source in rss_sources:
         try:
@@ -65,12 +65,12 @@ def run_news_collector(ticker="META"):
                     summary_text = getattr(entry, 'summary', '')
                     title_text = getattr(entry, 'title', '')
                     
-                    # 过滤非相关新闻 (Google News 除外，因为它搜索的就是关键词)
+                    # Filter unrelated news for broad feeds.
                     if source['name'] != "Google News":
                         if ticker not in title_text and ticker not in summary_text:
                             continue
                     
-                    # 处理时间
+                    # Normalize the published date.
                     if hasattr(entry, 'published_parsed') and entry.published_parsed:
                         date_str = time.strftime('%Y-%m-%d', entry.published_parsed)
                     else:
@@ -83,10 +83,10 @@ def run_news_collector(ticker="META"):
                         'link': entry.link
                     })
         except Exception as e:
-            print(f"   ⚠️ RSS 源 {source['name']} 报错: {e}")
+            print(f"   RSS source error for {source['name']}: {e}")
 
-    # --- C. 数据整合与保存 ---
-    print("🧹 [3/3] 正在整合历史数据与新数据...")
+    # --- C. Merge and save ---
+    print("[3/3] Merging historical and newly collected data...")
     
     new_df = pd.DataFrame(all_news)
     if not new_df.empty:
@@ -95,19 +95,19 @@ def run_news_collector(ticker="META"):
     else:
         new_df = pd.DataFrame(columns=['date', 'title', 'source'])
 
-    # 定义路径
+    # Define paths
     history_file_path = RAW_DIR / "allnews.csv"
     standard_save_path = RAW_DIR / f"{ticker}_news.csv"
     
     master_df = pd.DataFrame()
 
-    # 1. 优先读取历史归档 (allnews.csv)
+    # 1. Load optional archive file first.
     if os.path.exists(history_file_path):
-        print(f"📖 发现历史归档文件: {history_file_path}")
+        print(f"Archive file found: {history_file_path}")
         try:
             hist_df = pd.read_csv(history_file_path)
             
-            # 清洗列名
+            # Normalize column names
             hist_df.columns = [c.lower().strip() for c in hist_df.columns]
             rename_map = {
                 'headline': 'title',
@@ -126,15 +126,15 @@ def run_news_collector(ticker="META"):
                     hist_df['source'] = 'Historical_Archive'
                 
                 master_df = hist_df
-                print(f"   ✅ 成功加载历史数据: {len(master_df)} 条")
+                print(f"   Loaded {len(master_df)} archived rows")
             else:
-                print(f"   ❌ 格式错误: allnews.csv 缺少必要列")
+                print("   Archive format error: required columns are missing")
         except Exception as e:
-            print(f"   ❌ 读取历史文件出错: {e}")
+            print(f"   Failed to read archive file: {e}")
     else:
-        print(f"   ℹ️ 未找到 {history_file_path} (如果不在此处放置历史大文件，可忽略)。")
+        print(f"   Archive file not found at {history_file_path}. Skipping.")
 
-    # 2. 读取之前生成的标准文件 (防止重复覆盖)
+    # 2. Load the existing ticker file to avoid overwriting past runs.
     if os.path.exists(standard_save_path):
         try:
             prev_df = pd.read_csv(standard_save_path)
@@ -142,26 +142,26 @@ def run_news_collector(ticker="META"):
         except:
             pass
 
-    # 3. 合并新爬取的数据
+    # 3. Append newly collected rows
     if not new_df.empty:
         master_df = pd.concat([master_df, new_df], ignore_index=True)
 
-    # 4. 去重并保存
+    # 4. Deduplicate and save
     if not master_df.empty:
         master_df.sort_values(by='date', inplace=True)
-        # 关键去重：同一天、同一个标题只保留一条
+        # Keep only one record for the same title on the same day.
         master_df.drop_duplicates(subset=['title', 'date'], keep='last', inplace=True)
         
         master_df.to_csv(standard_save_path, index=False)
-        print(f"💾 [最终完成] 数据已保存至: {standard_save_path}")
-        print(f"📊 总计包含新闻: {len(master_df)} 条")
+        print(f"Saved combined dataset to: {standard_save_path}")
+        print(f"Total news rows: {len(master_df)}")
     else:
-        print("⚠️ 没有任何数据可保存。")
+        print("No data available to save.")
 
-    print(f"✅ {ticker} 新闻采集任务结束！")
+    print(f"News collection finished for {ticker}.")
 
 # ==========================================
-# 3. 🏁 独立运行开关
+# 3. Standalone execution
 # ==========================================
 if __name__ == "__main__":
     run_news_collector("META")

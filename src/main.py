@@ -2,22 +2,25 @@ import sys
 import os
 import time
 from pathlib import Path
-from src.config import DEFAULT_TICKER
+
 # ==========================================
-# 1. 🟢 路径配置
+# 1. Path setup
 # ==========================================
 current_dir = Path(__file__).resolve().parent
 project_root = current_dir.parent
-sys.path.append(str(project_root))
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
 
-print(f"📂 项目根目录: {project_root}")
+from src.config import DEFAULT_TICKER
+
+print(f"Project root: {project_root}")
 
 # ==========================================
-# 2. 🔌 动态加载模块
+# 2. Dynamic module loading
 # ==========================================
 modules = {}
 
-# --- 1. 采集模块 ---
+# --- Data collection ---
 try:
     from src.collector.news_collector import run_news_collector
     modules['news_collector'] = run_news_collector
@@ -28,93 +31,96 @@ try:
     modules['price_collector'] = run_price_collector
 except ImportError: pass
 
-# --- 2. 分析模块 ---
+# --- Analysis ---
 try:
     from src.analysis.analyzer import run_sentiment_analysis
     modules['analyzer'] = run_sentiment_analysis
 except ImportError: pass
 
-# --- 3. 训练模块 (Sentiment Trend Pro) ---
+# --- Training ---
 try:
-    from src.model.sentiment_trend_pro import run_train_model
+    from models.sentiment_trend_pro import run_train_model
     modules['trainer'] = run_train_model
-except ImportError: pass
+    print("Loaded module: Trainer")
+except ImportError as e:
+    print(f"Module not loaded: Trainer ({e})")
 
-# --- 4. 回测模块 ---
+# --- Backtesting ---
 try:
     from src.strategy.backtester1 import backtester1
     modules['backtester'] = backtester1
 except ImportError: pass
 
-# --- 5. 预测模块 (Tech Forecaster - 新增!) ---
+# --- Forecasting ---
 try:
-    from src.model.forecast_tech import run_tech_forecast
+    from src.prediction.forecast_tech import run_tech_forecast
     modules['forecaster'] = run_tech_forecast
-    print("✅ 模块加载成功: 技术面水晶球 (Forecaster)")
+    print("Loaded module: Forecaster")
 except ImportError as e:
-    print(f"⚠️ 模块未加载: 技术面预测 ({e})")
+    print(f"Module not loaded: Forecaster ({e})")
 
 
 # ==========================================
-# 3. 🎮 主控制台
+# 3. Main console
 # ==========================================
 def main():
     default_ticker = DEFAULT_TICKER
     
     while True:
-        print("\n" + "="*50)
-        print(f"   🤖 AI 量化交易系统 | 当前目标: {default_ticker}")
-        print("="*50)
+        print("\n" + "=" * 64)
+        print("   AI Quant Research Console")
+        print(f"   Active ticker: {default_ticker}")
+        print("=" * 64)
         
-        print("1. 📥  数据采集 (Step 1: Get Data)") 
-        print("2. 🧠  情绪分析 (Step 2: Analysis)")
-        print("3. 🏋️  AI模型训练 (Step 3: Training)")
-        print("4. 📈  策略回测 (Step 4: Backtest)")
+        print("1. Collect data")
+        print("2. Run sentiment analysis")
+        print("3. Train model")
+        print("4. Run backtest")
         print("-" * 30)
-        print("5. 🔮  【明日预测】 (纯技术面水晶球)")
+        print("5. Generate next-session forecast")
         print("-" * 30)
-        print("9. 🚀  【全流程自动化】 (1 -> 2 -> 3 -> 4)")
+        print("9. Run full pipeline (1 -> 2 -> 3 -> 4 -> 5)")
         print("-" * 30)
-        print("C. 🔄  更改股票代码")
-        print("0. 🚪  退出系统")
+        print("C. Change ticker")
+        print("0. Exit")
         
-        choice = input("\n👉 请输入指令: ").upper().strip()
+        choice = input("\nEnter command: ").upper().strip()
 
-        # --- 1. 采集 ---
+        # --- 1. Collect data ---
         if choice == "1":
-            print("\n>>> 启动数据采集...")
+            print("\nStarting data collection...")
             if 'news_collector' in modules: modules['news_collector'](default_ticker)
             if 'price_collector' in modules: modules['price_collector'](default_ticker)
 
-        # --- 2. 分析 ---
+        # --- 2. Analysis ---
         elif choice == "2":
-            print("\n>>> 启动情绪分析...")
+            print("\nRunning sentiment analysis...")
             if 'analyzer' in modules: modules['analyzer'](default_ticker)
 
-        # --- 3. 训练 ---
+        # --- 3. Training ---
         elif choice == "3":
-            print("\n>>> 启动 AI 模型训练...")
+            print("\nTraining model...")
             if 'trainer' in modules:
                 modules['trainer'](default_ticker)
             else:
-                print("❌ 错误: 训练模块 (sentiment_trend_pro) 未找到")
+                print("Error: training module not found")
 
-        # --- 4. 回测 ---
+        # --- 4. Backtesting ---
         elif choice == "4":
-            print("\n>>> 启动历史回测...")
+            print("\nRunning backtest...")
             if 'backtester' in modules: modules['backtester'](default_ticker)
 
-        # --- 5. 预测 (新功能) ---
+        # --- 5. Forecasting ---
         elif choice == "5":
-            print(f"\n>>> 启动 {default_ticker} 明日走势预测...")
+            print(f"\nGenerating forecast for {default_ticker}...")
             if 'forecaster' in modules:
                 modules['forecaster'](default_ticker)
             else:
-                print("❌ 错误: 预测模块 (forecast_tech) 未找到")
+                print("Error: forecast module not found")
 
-        # --- 9. 全自动 ---
+        # --- 9. Full pipeline ---
         elif choice == "9":
-            print(f"\n🚀 启动全流程自动化: {default_ticker}")
+            print(f"\nRunning full pipeline for {default_ticker}...")
             
             # Step 1
             if 'news_collector' in modules: modules['news_collector'](default_ticker)
@@ -128,31 +134,31 @@ def main():
             
             # Step 3
             if 'trainer' in modules:
-                print("\n[Step 3] 训练 AI 模型...")
+                print("\n[Step 3] Training model...")
                 modules['trainer'](default_ticker)
                 time.sleep(1)
 
             # Step 4
             if 'backtester' in modules:
-                print("\n[Step 4] 执行回测验证...")
+                print("\n[Step 4] Running backtest...")
                 modules['backtester'](default_ticker)
             
-            # 额外赠送：顺便跑一下明日预测
+            # Step 5
             if 'forecaster' in modules:
-                 print("\n[Bonus] 生成明日预测报告...")
+                 print("\n[Step 5] Generating forecast...")
                  modules['forecaster'](default_ticker)
             
-            print("\n🎉 全流程执行完毕！")
+            print("\nPipeline completed.")
 
-        # --- 其他 ---
+        # --- Other actions ---
         elif choice == "C":
-            new_ticker = input("请输入新代码 (例如 NVDA): ").upper()
+            new_ticker = input("Enter a new ticker (for example NVDA): ").upper()
             if new_ticker: default_ticker = new_ticker
         elif choice == "0":
-            print("\n👋 祝交易顺利，赚大钱！")
+            print("\nSession closed.")
             break
         else:
-            print("\n❌ 无效指令")
+            print("\nInvalid command.")
 
 if __name__ == "__main__":
     main()
