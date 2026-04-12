@@ -20,6 +20,18 @@ print(f"Project root: {project_root}")
 # ==========================================
 modules = {}
 
+TICKER_ALIASES = {
+    "APPLE": "AAPL",
+    "GOOGLE": "GOOGL",
+    "ALPHABET": "GOOGL",
+    "FACEBOOK": "META",
+}
+
+
+def canonical_ticker(raw_ticker: str) -> str:
+    t = str(raw_ticker).upper().strip()
+    return TICKER_ALIASES.get(t, t)
+
 # --- Data collection ---
 try:
     from src.collector.news_collector import run_news_collector
@@ -45,10 +57,22 @@ try:
 except ImportError as e:
     print(f"Module not loaded: Trainer ({e})")
 
+try:
+    from models.finbert_trainer import run_train_finbert
+    modules['finbert_trainer'] = run_train_finbert
+    print("Loaded module: FinBERT Trainer")
+except ImportError as e:
+    print(f"Module not loaded: FinBERT Trainer ({e})")
+
 # --- Backtesting ---
 try:
     from src.strategy.backtester1 import backtester1
     modules['backtester'] = backtester1
+except ImportError: pass
+
+try:
+    from src.strategy.combo_backtest_report import run_combo_report
+    modules['combo_backtester'] = run_combo_report
 except ImportError: pass
 
 # --- Forecasting ---
@@ -64,7 +88,7 @@ except ImportError as e:
 # 3. Main console
 # ==========================================
 def main():
-    default_ticker = DEFAULT_TICKER
+    default_ticker = canonical_ticker(DEFAULT_TICKER)
     
     while True:
         print("\n" + "=" * 64)
@@ -75,7 +99,8 @@ def main():
         print("1. Collect data")
         print("2. Run sentiment analysis")
         print("3. Train model")
-        print("4. Run backtest")
+        print("4. Run backtest (combo only)")
+        print("6. Train FinBERT (MPS/CUDA/CPU auto)")
         print("-" * 30)
         print("5. Generate next-session forecast")
         print("-" * 30)
@@ -108,7 +133,24 @@ def main():
         # --- 4. Backtesting ---
         elif choice == "4":
             print("\nRunning backtest...")
-            if 'backtester' in modules: modules['backtester'](default_ticker)
+            if 'combo_backtester' in modules:
+                print("[Backtest] Running 50/50 combo report...")
+                try:
+                    modules['combo_backtester'](default_ticker)
+                except FileNotFoundError as e:
+                    print(f"[Backtest] Combo skipped: {e}")
+                except Exception as e:
+                    print(f"[Backtest] Combo failed: {type(e).__name__}: {e}")
+            else:
+                print("Error: combo backtester module not found")
+
+        # --- 6. FinBERT training ---
+        elif choice == "6":
+            print("\nTraining FinBERT...")
+            if 'finbert_trainer' in modules:
+                modules['finbert_trainer'](default_ticker)
+            else:
+                print("Error: FinBERT trainer module not found")
 
         # --- 5. Forecasting ---
         elif choice == "5":
@@ -139,9 +181,17 @@ def main():
                 time.sleep(1)
 
             # Step 4
-            if 'backtester' in modules:
-                print("\n[Step 4] Running backtest...")
-                modules['backtester'](default_ticker)
+            print("\n[Step 4] Running backtest...")
+            if 'combo_backtester' in modules:
+                print("[Step 4] 50/50 combo report...")
+                try:
+                    modules['combo_backtester'](default_ticker)
+                except FileNotFoundError as e:
+                    print(f"[Step 4] Combo skipped: {e}")
+                except Exception as e:
+                    print(f"[Step 4] Combo failed: {type(e).__name__}: {e}")
+            else:
+                print("[Step 4] Error: combo backtester module not found")
             
             # Step 5
             if 'forecaster' in modules:
@@ -153,7 +203,11 @@ def main():
         # --- Other actions ---
         elif choice == "C":
             new_ticker = input("Enter a new ticker (for example NVDA): ").upper()
-            if new_ticker: default_ticker = new_ticker
+            if new_ticker:
+                mapped = canonical_ticker(new_ticker)
+                if mapped != new_ticker:
+                    print(f"Ticker mapped: {new_ticker} -> {mapped}")
+                default_ticker = mapped
         elif choice == "0":
             print("\nSession closed.")
             break
