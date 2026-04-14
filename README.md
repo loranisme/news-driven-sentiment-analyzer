@@ -36,11 +36,18 @@ python -m src.main
 ```
 ## Limitations
 •	The framework is currently research-focused, not production-ready
+
 •	Model complexity is still relatively high
+
 •	Output probabilities are better interpreted as scores / conviction proxies than perfectly calibrated probabilities
+
 •	Further validation is still needed through:
+
 •	IC analysis
+
 •	quantile return spread analysis
+
 •	threshold sensitivity tests
+
 •	ablation studies
 
