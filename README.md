@@ -7,12 +7,19 @@ The system is designed as a single-name research model, with the strongest empir
 ## Key Features
 
 •	Data Collection: Automatically gathers financial news and historical OHLCV price data.
+
 •	Sentiment Analysis: Uses FinBERT to extract sentiment signals from financial news text.
+
 •	Feature Engineering: Combines sentiment features with technical and market-regime indicators such as moving averages, RSI, MACD, ATR, volatility, and relative strength.
+
 •	Model Training: Uses rolling-window machine learning to generate short-horizon directional probabilities.
+
 •	Signal Filtering: Combines model output with trend, volatility, and market-regime conditions before entering trades.
+
 •	Risk Management: Includes volatility-based sizing, ATR stop-loss, trailing stop, drawdown pause, and leverage constraints.
+
 •	Backtesting Framework: Supports walk-forward evaluation, transaction cost modeling, and performance attribution.
+
 •	Dual-Core Design: Includes both a balanced core and an aggressive core, which can be combined into a simple ensemble timing framework.
 
 
