@@ -21,6 +21,7 @@ The system is designed as a single-name research model, with the strongest empir
 
 <img width="935" height="704" alt="Screenshot 2026-04-14 at 00 57 09" src="https://github.com/user-attachments/assets/b6b08538-a1f3-41ff-9cfa-c2a2d8f39691" />
 
+<img width="686" height="628" alt="Screenshot 2026-04-14 at 00 59 39" src="https://github.com/user-attachments/assets/a5c5304a-ca18-4c4f-ac4e-b83fb659037c" />
 
 ## How to Run
 
